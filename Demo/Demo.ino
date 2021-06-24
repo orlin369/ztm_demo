@@ -23,6 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "ApplicationConfiguration.h"
 
+#include "GPIOdescription.h"
+
 #include <ModbusSlave.h>
 
 #pragma endregion
@@ -110,76 +112,35 @@ void update_status_led();
 #pragma region Variables Pins
 
 /**
- * @brief Digital inputs map.
+ * @brief GPIO description.
  * 
  */
-int DigitalInputs_g[] = {PIN_PIR, PIN_DOOR_TAMPER, PIN_WINDOW_TAMPER, PIN_OPEN_DOOR};
+GPIOs_t GPIOs_g [] = 
+{
+    // PWM
+    (GPIOs_t){5, 0, PWM_OUTPUT},
+    (GPIOs_t){6, 1, PWM_OUTPUT},
+    (GPIOs_t){9, 2, PWM_OUTPUT},
+    (GPIOs_t){10, 3, PWM_OUTPUT},
+    // Digital Out
+    (GPIOs_t){8, 3, OUTPUT},
+    // Analog Input
+    (GPIOs_t){A0, 0, ANALOG_INPUT},
+    (GPIOs_t){A1, 1, ANALOG_INPUT},
+    (GPIOs_t){A2, 2, ANALOG_INPUT},
+    (GPIOs_t){A3, 3, ANALOG_INPUT},
+    // Digital Inputs
+    (GPIOs_t){2, 0, INPUT_PULLUP},
+    (GPIOs_t){3, 1, INPUT_PULLUP},
+    (GPIOs_t){4, 2, INPUT_PULLUP},
+    (GPIOs_t){7, 3, INPUT_PULLUP},
+};
 
 /**
- * @brief Digital inputs map index.
+ * @brief Size of the GPIO description.
  * 
  */
-int IndexDigitalInputs_g[] = {INDEX_PIR, INDEX_DOOR_TAMPER, INDEX_WINDOW_TAMPER, INDEX_OPEN_DOOR};
-
-/**
- * @brief Size of the discrete inputs memory block.
- * 
- */
-uint8_t DigitalInputsSize_g = (sizeof(DigitalInputs_g) / sizeof(DigitalInputs_g[0])) + 1;
-
-/**
- * @brief Analog inputs map.
- * 
- */
-int AnalogInputs_g[] = {A0, A1, A2, A3};
-
-/**
- * @brief Analog inputs map index.
- * 
- */
-int IndexAnalogInputs_g[] = {0, 1, 2, 3};
-
-/**
- * @brief Size of the analog inputs memory block.
- * 
- */
-uint8_t AnalogInputsSize_g = (sizeof(AnalogInputs_g) / sizeof(AnalogInputs_g[0])) + 1;
-
-/**
- * @brief Digital outputs map.
- * 
- */
-int DigitalOutputs_g[] = {PIN_DOOR_LOCK};
-
-/**
- * @brief Digital outputs map index.
- * 
- */
-int IndexDigitalOutputs_g[] = {INDEX_OPEN_DOOR};
-
-/**
- * @brief Size of the discrete outputs memory block.
- * 
- */
-uint8_t DigitalOutputsSize_g = (sizeof(DigitalOutputs_g) / sizeof(DigitalOutputs_g[0])) + 1;
-
-/**
- * @brief Analog outputs map.
- * 
- */
-int AnalogOutputs_g[] = {5, 6, 9, 10};
-
-/**
- * @brief Analog outputs map index.
- * 
- */
-int IndexAnalogOutputs_g[] = {0, 1, 2, 3};
-
-/**
- * @brief Size of the analog outputs memory block.
- * 
- */
-uint8_t AnalogOutputsSize_g = (sizeof(AnalogOutputs_g) / sizeof(AnalogOutputs_g[0])) + 1;
+uint8_t GPIOsSize_g = (sizeof(GPIOs_g) / sizeof(GPIOs_g[0]));
 
 #pragma endregion
 
@@ -269,16 +230,26 @@ unsigned long CurrentTime_g = 0;
  */
 void setup()
 {
-    // Initialize the digital inputs.
-    for (uint8_t index = 0; index < DigitalInputsSize_g; index++)
+    // Initialize the GPIOs.
+    for (uint8_t index = 0; index < GPIOsSize_g; index++)
     {
-        pinMode(DigitalInputs_g[index], INPUT_PULLUP);
-    }
-
-    // Initialize the digital inputs.
-    for (uint8_t index = 0; index < DigitalOutputsSize_g; index++)
-    {
-        pinMode(DigitalOutputs_g[index], OUTPUT);
+        if (GPIOs_g[index].Type == INPUT_PULLUP)
+        {
+            pinMode(GPIOs_g[index].Pin, GPIOs_g[index].Type);
+        }
+        else if (GPIOs_g[index].Type == OUTPUT)
+        {
+            pinMode(GPIOs_g[index].Pin, GPIOs_g[index].Type);
+            digitalWrite(GPIOs_g[index].Pin, LOW);
+        }
+        else if (GPIOs_g[index].Type == PWM_OUTPUT)
+        {
+            analogWrite(GPIOs_g[index].Pin, 0);
+        }
+        else if (GPIOs_g[index].Type == ANALOG_INPUT)
+        {
+            // Nothing...
+        }
     }
 
     // Initialize the status LED.
@@ -301,7 +272,7 @@ void setup()
     // https://create.arduino.cc/projecthub/tylerpeppy/25-khz-4-pin-pwm-fan-control-with-arduino-uno-3005a1
     // Fan / PWM
 
-    // 
+    // LEDs
     // Lamps / PWM
 
     // Digital output.
@@ -314,16 +285,21 @@ void setup()
  */
 void loop()
 {
-    // Update state of the digital inputs.
-    for (uint8_t index = 0; index < DigitalInputsSize_g; index++)
+    // Update state of the inputs.
+    for (uint8_t index = 0; index < GPIOsSize_g; index++)
     {
-        DiscreteInputs_g[IndexDigitalInputs_g[index]] = (digitalRead(DigitalInputs_g[index]) == LOW);
-    }
-
-    // Update state of the analog inputs.
-    for (uint8_t index = 0; index < AnalogInputsSize_g; index++)
-    {
-        InputRegisters_g[IndexAnalogInputs_g[index]] = map(analogRead(AnalogInputs_g[index]), 0, 1023, 0, 50000);
+        if (GPIOs_g[index].Type == INPUT_PULLUP)
+        {
+            DiscreteInputs_g[GPIOs_g[index].Index] = (digitalRead(GPIOs_g[index].Pin) == LOW);
+        }
+        else if (GPIOs_g[index].Type == INPUT)
+        {
+            DiscreteInputs_g[GPIOs_g[index].Index] = (digitalRead(GPIOs_g[index].Pin) == LOW);
+        }
+        else if (GPIOs_g[index].Type == ANALOG_INPUT)
+        {
+            InputRegisters_g[GPIOs_g[index].Index] = map(analogRead(GPIOs_g[index].Pin), 0, 1023, 0, 50000);
+        }
     }
 
     // Listen for modbus requests on the serial port.
@@ -331,20 +307,24 @@ void loop()
     // And if there is a function registered to the received function code, this function will be executed.
     ModbusSlave_g.poll();
 
-    // Update state of the digital outputs.
-    int DOL = LOW;
-    for (uint8_t index = 0; index < DigitalOutputsSize_g; index++)
-    {
-        DOL = Coils_g[index] ? HIGH : LOW;
-        digitalWrite(DigitalOutputs_g[index], DOL);
-    }
+    static int DOL;
+    static int AOL;
 
-    // Update state if the analog outputs.
-    int AOL = 0;
-    for (uint8_t index = 0; index < AnalogOutputsSize_g; index++)
+    // Update state of the outputs.
+    DOL = LOW;
+    AOL = 0;
+    for (uint8_t index = 0; index < GPIOsSize_g; index++)
     {
-        AOL = map(HoldingRegisters_g[index], 0, 50000, 0, 1023);
-        analogWrite(AnalogOutputs_g[index], AOL);
+        if (GPIOs_g[index].Type == OUTPUT)
+        {
+            DOL = Coils_g[GPIOs_g[index].Index] ? HIGH : LOW;
+            digitalWrite(GPIOs_g[index].Pin, DOL);
+        }
+        else if (GPIOs_g[index].Type == ANALOG_INPUT)
+        {
+            AOL = map(HoldingRegisters_g[GPIOs_g[index].Index], 0, 50000, 0, 1023);
+            analogWrite(GPIOs_g[index].Pin, AOL);
+        }
     }
 
     // Update status LED.
