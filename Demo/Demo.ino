@@ -123,7 +123,7 @@ GPIOs_t GPIOs_g [] =
     (GPIOs_t){9, 2, PWM_OUTPUT},
     (GPIOs_t){10, 3, PWM_OUTPUT},
     // Digital Out
-    (GPIOs_t){8, 3, OUTPUT},
+    (GPIOs_t){8, 0, OUTPUT},
     // Analog Input
     (GPIOs_t){A0, 0, ANALOG_INPUT},
     (GPIOs_t){A1, 1, ANALOG_INPUT},
@@ -320,7 +320,7 @@ void loop()
             DOL = Coils_g[GPIOs_g[index].Index] ? HIGH : LOW;
             digitalWrite(GPIOs_g[index].Pin, DOL);
         }
-        else if (GPIOs_g[index].Type == ANALOG_INPUT)
+        else if (GPIOs_g[index].Type == PWM_OUTPUT)
         {
             AOL = map(HoldingRegisters_g[GPIOs_g[index].Index], 0, 50000, 0, 1023);
             analogWrite(GPIOs_g[index].Pin, AOL);
