@@ -111,6 +111,8 @@ void update_status_led();
 
 #pragma region Variables Pins
 
+#ifdef ARDUINO_MINI_PRO_PINS
+
 /**
  * @brief GPIO description.
  * 
@@ -118,29 +120,51 @@ void update_status_led();
 GPIOs_t GPIOs_g [] = 
 {
     // PWM
-    (GPIOs_t){5, 0, PWM_OUTPUT},
-    (GPIOs_t){6, 1, PWM_OUTPUT},
-    (GPIOs_t){9, 2, PWM_OUTPUT},
-    (GPIOs_t){10, 3, PWM_OUTPUT},
+    (GPIOs_t){5, 0, PWM_OUTPUT}, // Upper Fan
+    (GPIOs_t){6, 1, PWM_OUTPUT}, // Lower Fan
+    (GPIOs_t){9, 2, PWM_OUTPUT}, // Light 1
+    (GPIOs_t){10, 3, PWM_OUTPUT}, // Light 2
+    // (GPIOs_t){10, 3, PWM_OUTPUT}, // (Duplicate for test purpose only.)
     // Digital Out
-    (GPIOs_t){8, 0, OUTPUT},
+    (GPIOs_t){8, 0, OUTPUT}, // Door lock signal.
+    (GPIOs_t){11, 1, OUTPUT}, // Window blind signal.
     // Analog Input
-    (GPIOs_t){A0, 0, ANALOG_INPUT},
-    (GPIOs_t){A1, 1, ANALOG_INPUT},
-    (GPIOs_t){A2, 2, ANALOG_INPUT},
-    (GPIOs_t){A3, 3, ANALOG_INPUT},
+    (GPIOs_t){A0, 0, ANALOG_INPUT}, // Blinds input feedback.
+    (GPIOs_t){A1, 1, ANALOG_INPUT}, // NC
+    (GPIOs_t){A2, 2, ANALOG_INPUT}, // Light sensor.
+    (GPIOs_t){A3, 3, ANALOG_INPUT}, // NC
     // Digital Inputs
-    (GPIOs_t){2, 0, INPUT_PULLUP},
-    (GPIOs_t){3, 1, INPUT_PULLUP},
-    (GPIOs_t){4, 2, INPUT_PULLUP},
-    (GPIOs_t){7, 3, INPUT_PULLUP},
+    (GPIOs_t){2, 0, INPUT_PULLUP}, // Window closed input.
+    (GPIOs_t){3, 1, INPUT_PULLUP}, // Door closed tamper.
+    (GPIOs_t){4, 2, INPUT_PULLUP}, // PIR.
+    (GPIOs_t){7, 3, INPUT_PULLUP}, // Cabinet tamper.
+    (GPIOs_t){12, 4, INPUT_PULLUP}, // Unlock button.
+    // (GPIOs_t){12, 4, INPUT_PULLUP}, // (Duplicate for test purpose only.)
 };
+
+#elif defined(KIDS_HOUSE)
+
+/**
+ * @brief GPIO description.
+ * 
+ */
+GPIOs_t GPIOs_g [];
+
+#else
+
+/**
+ * @brief GPIO description.
+ * 
+ */
+GPIOs_t GPIOs_g [] = {};
+
+#endif // ARDUINO_MINI_PRO_PINS
 
 /**
  * @brief Size of the GPIO description.
  * 
  */
-uint8_t GPIOsSize_g = (sizeof(GPIOs_g) / sizeof(GPIOs_g[0]));
+size_t GPIOsSize_g = (sizeof(GPIOs_g) / sizeof(GPIOs_g[0]));
 
 #pragma endregion
 
@@ -230,6 +254,36 @@ unsigned long CurrentTime_g = 0;
  */
 void setup()
 {
+    // Check the resource.
+    int IsValidL = check_config(GPIOs_g, GPIOsSize_g);
+
+    // Invalid pointer.
+    while (IsValidL == 1)
+    {
+        digitalWrite(PIN_STATUS_LED, HIGH);
+        delay(100);
+        digitalWrite(PIN_STATUS_LED, LOW);
+        delay(100);
+    }
+
+    // Invalid size.
+    while (IsValidL == 2)
+    {
+        digitalWrite(PIN_STATUS_LED, HIGH);
+        delay(100);
+        digitalWrite(PIN_STATUS_LED, LOW);
+        delay(500);
+    }
+
+    // Pin duplicates.
+    while (IsValidL == 3)
+    {
+        digitalWrite(PIN_STATUS_LED, HIGH);
+        delay(100);
+        digitalWrite(PIN_STATUS_LED, LOW);
+        delay(1000);
+    }
+
     // Initialize the GPIOs.
     for (uint8_t index = 0; index < GPIOsSize_g; index++)
     {
@@ -555,3 +609,57 @@ void update_status_led()
 }
 
 #pragma endregion
+
+#pragma region Function Check the I/O configuration.
+
+/**
+ * @brief Check the I/O configuration.
+ * 
+ * @param config Configuration of the GPIO.
+ * @param size Size of the GPIO.
+ */
+int check_config(GPIOs_t * config, size_t size)
+{
+    if (config == nullptr)
+    {
+        return 1;
+    }
+
+    if (size == 0)
+    {
+        return 2;
+    }
+
+    bool MatchL = false;
+    for (size_t index_i = 0; index_i < size; index_i++)
+    {
+        for (size_t index_j = 0; index_j < size; index_j++)
+        {
+            // If pins are the same but o differnet indexes,
+            // his means that there is conflict  in the configuration/
+            MatchL = ((config[index_j].Pin == config[index_i].Pin)
+                        && !(index_i == index_j));
+
+            // Exit from the loop.
+            if (MatchL)
+            {++
+                break;
+            }
+        }
+
+        // Exit from the loop.
+        if (MatchL)
+        {
+            break;
+        }
+    }
+
+    if (MatchL)
+    {
+        return 3;
+    }
+
+    return 0;
+}
+
+#pragma endregion // Check the I/O configuration.

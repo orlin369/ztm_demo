@@ -28,6 +28,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  #include "WProgram.h"
 #endif
 
+#pragma region PINs
+
+/**
+ * @brief Demo kit pin configuration.
+ * 
+ */
+#define ARDUINO_MINI_PRO_PINS
+
+/**
+ * @brief Kids house configuration.
+ * 
+ */
+//#define KIDS_HOUSE
+
+#pragma endregion // PINs
+
 #pragma region MODBUS
 
 /**
@@ -54,7 +70,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #define PIN_RS485_CTRL -1
 
-#pragma endregion
+#pragma endregion // MODBUS
 
 #pragma region Status LED
 
@@ -70,6 +86,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #define BLINK_INTERVAL 1000
 
-#pragma endregion
+#pragma endregion // Status LED
 
 #endif // APPLICATION_CONFIGURATION_H
