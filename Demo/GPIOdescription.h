@@ -41,6 +41,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define ANALOG_INPUT 0x04
 
 /**
+ * @brief Analog input.
+ * 
+ */
+#define DIGITAL_FUNC_OUTPUT 0x05
+
+
+/**
  * @brief GPIO Descriptior.
  * 
  */

@@ -379,10 +379,17 @@ void loop()
             AOL = map(HoldingRegisters_g[GPIOs_g[index].Index], 0, 50000, 0, 1023);
             analogWrite(GPIOs_g[index].Pin, AOL);
         }
+        else if (GPIOs_g[index].Type == DIGITAL_FUNC_OUTPUT)
+        {
+            DOL = Coils_g[GPIOs_g[index].Index] ? HIGH : LOW;
+            function_output(GPIOs_g[index].Pin, DOL);
+        }
     }
 
     // Update status LED.
     update_status_led();
+
+    // TODO: Do something with the bits from the function.
 }
 
 #pragma region Functions MODBUS
@@ -642,7 +649,7 @@ int check_config(GPIOs_t * config, size_t size)
 
             // Exit from the loop.
             if (MatchL)
-            {++
+            {
                 break;
             }
         }
@@ -663,3 +670,14 @@ int check_config(GPIOs_t * config, size_t size)
 }
 
 #pragma endregion // Check the I/O configuration.
+
+/**
+ * @brief Function as output signaling.
+ * 
+ * @param pin Pin index.
+ * @param state Pin state.
+ */
+void function_output(int pin, int state)
+{
+    
+}
